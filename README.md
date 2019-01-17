@@ -5,6 +5,6 @@ This project was performed as part of my PhD work at Michigan State University. 
 Any questions or comments can be sent to rothmitc[at]msu.edu
 
 There are 3 major analysis files in this project:
-1) Heatmaps and correlation analyses
-2) Multiple Regression analyses and Path Analysis
-3) Multivariate analyses
+1) [Heatmaps and correlation analyses](https://github.com/rothmi12/SDS-Risk-Assessment/blob/master/Heatmaps_and_correlations.md)
+2) [Multiple Regression analyses and Path Analysis](https://github.com/rothmi12/SDS-Risk-Assessment/blob/master/Multiple_Regression.md)
+3) [Multivariate analyses](https://github.com/rothmi12/SDS-Risk-Assessment/blob/master/Multivariate_SDS_Analysis.md)
