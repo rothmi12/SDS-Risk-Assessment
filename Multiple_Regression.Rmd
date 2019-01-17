@@ -1,0 +1,587 @@
+---
+title: "Multiple Regression"
+author: "Mitch Roth"
+date: "7/9/2017"
+output:
+  md_document:
+    variant: markdown_github
+---
+
+##Import Data
+```{r Import Data}
+#Install and load all necessary packages
+#install.packages("MASS")
+library(MASS)
+
+#Load the data
+ppra.2015 <- read.csv("2015_master.csv")
+ppra.2014 <- read.csv("2014_master.csv")
+df.yield <- read.csv("combined_year_yield.csv")
+df.SDS.DX <- read.csv("combined_year_DX.csv")
+df.yield$Year <- as.factor(df.yield$Year)
+df.SDS.DX$Year <- as.factor(df.SDS.DX$Year)
+```
+
+
+##Multiple Regression
+```{r Multiple Regression for Yield}
+#Determine n, number of observations
+n <- length(df.yield[,1])
+
+#Generate the full linear model containing the whole data set
+full.fit <- lm(Yield ~ Year+
+                      Pre.ratio+
+                      PreSCN.cysts+ 
+                      PreSCN.eggs+
+                      PreSCN.juvs+ 
+                      Pre.spiral+  
+                      #Pre.lesion+
+                      #Pre.dagger+
+                      V3.qPCR+
+                      V3.DW+
+                      V3.foliar+
+                      V3.root+
+                      R5.DW+
+                      R5.foliar+
+                      R5.root+
+                      R5.qPCR+      
+                      R5.DX,
+                      #V3.Phi2+
+                      #V3.PhiNPQ+
+                      #V3.PhiNO+
+                      #V3.SPAD+
+                      #V3.NPQt+
+                      #V3.LEF+
+                      #V3.qL+
+                      #R1.Phi2+
+                      #R1.PhiNPQ+
+                      #R1.PhiNO+
+                      #R1.SPAD+
+                      #R1.NPQt+
+                      #R1.LEF+
+                      #R1.qL,
+                      data = df.yield)
+#Determine best version of each model using stepwise AIC and BIC
+best.AIC.full <- stepAIC(full.fit, direction = "both")
+best.BIC.full <- stepAIC(full.fit, direction = "both", k=log(n))
+#Check out the models before and after selection
+summary(best.AIC.full)
+summary(best.BIC.full)
+best.BIC.full$anova
+best.BIC.full$call
+
+#Best model is lm(formula = Yield ~ R5.DW + R5.DX, data = df.yield)
+#Check to see if adding the interaction term R5.DW:R5.DX helps
+best.BIC <- lm(Yield ~ R5.DX*R5.DW, data = df.yield)
+summary(best.BIC)
+#Adding the interaction term doesn't help.
+```
+
+```{r Multiple Regression for R5 DX}
+#Like in previous analysis, convert the units of Fv DNA to fg / ng
+df.SDS.DX$Pre.ratio <- df.SDS.DX$Pre.ratio * 1000000
+#Determine n, number of observations
+n <- length(df.SDS.DX[,1])
+
+#Remove non-predictive variables (Anything R5)
+R5.DX.fit <- lm(R5.DX ~ Year +
+                         V3.DW+
+                         #R5.DW+
+                         V3.foliar+
+                         V3.root+
+                         #R5.foliar+
+                         #R5.root+
+                         #R5.DX+
+                         Pre.ratio+
+                         PreSCN.cysts+ 
+                         PreSCN.eggs+
+                         PreSCN.juvs+ 
+                         Pre.spiral+
+                         V3.qPCR,
+                         #R5.qPCR
+                         data = df.SDS.DX)
+#Determine the best version of each model using stepwise AIC and BIC
+best.AIC.DX <- stepAIC(R5.DX.fit, direction = "both")
+best.BIC.DX <- stepAIC(R5.DX.fit, direction = "both", k=log(n))
+best.BIC.DX$anova
+#Check out the models before and after selection
+summary(R5.DX.fit)
+summary(best.AIC.DX)
+summary(best.BIC.DX)
+
+#So, the best model (according to BIC) to predict R5.DX is:
+# R5.DX = Year + Pre.ratio + Pre.SCN.eggs
+best.BIC.DX2 <- lm(R5.DX ~ Year*Pre.ratio*PreSCN.eggs, data = df.SDS.DX)
+summary(best.BIC.DX2)
+#Adding the interaction term slightly helps R2, doesn't help P
+```
+
+```{r Multiple Regression for R5 DW}
+#Remove non-predictive variables from this model (Anything R5)
+R5.DW.fit <- lm(R5.DW ~ Year +
+                         V3.DW+
+                         #R5.DW+
+                         V3.foliar+
+                         V3.root+
+                         #R5.foliar+
+                         #R5.root+
+                         #R5.DX+
+                         Pre.ratio+
+                         PreSCN.cysts+ 
+                         PreSCN.eggs+
+                         PreSCN.juvs+ 
+                         Pre.spiral+
+                         Pre.ratio+
+                         V3.qPCR,
+                         #R5.qPCR,
+                         data = df.SDS.DX)
+
+#Determine the best version of each model using stepwise AIC and BIC
+best.AIC.DW <- stepAIC(R5.DW.fit, direction = "both")
+best.BIC.DW <- stepAIC(R5.DW.fit, direction = "both", k=log(n))
+best.BIC.DW$anova
+#Check out the models before and after selection
+summary(R5.DW.fit)
+summary(best.AIC.DW)
+summary(best.BIC.DW)
+
+#So, the best model (according to BIC) to predict R5.DW is:
+# R5.DW = V3.root + Pre.SCN.cysts
+best.BIC.DW2 <- lm(R5.DW ~ V3.root*PreSCN.cysts, data = df.SDS.DX)
+summary(best.BIC.DW2)
+#Adding the interaction term slightly helps R2, doesn't help P
+```
+
+```{r Double Check Models}
+#Check each model
+#Creates 3 plots for each model
+model.check <- function(model){
+  library(MASS)
+  par(mfrow=c(1, 1))
+  sresid <- studres(model) 
+  hist(sresid, freq=FALSE, 
+       main="Distribution of Studentized Residuals")
+  xfit<-seq(min(sresid),max(sresid),length=100) 
+  yfit<-dnorm(xfit) 
+  lines(xfit, yfit)
+  par(mfrow=c(2, 2))
+  plot(model)
+  #Check for autocorrelation of residuals
+  par(mfrow=c(1, 1))
+  acf(model$residuals)
+}
+
+model.check(best.BIC.full)
+model.check(best.BIC.DX)
+model.check(best.BIC.DW)
+
+#All models look pretty good
+```
+
+```{r, Path Analysis}
+#install.packages("lavaan")
+#install.packages("gendata")
+#install.packages("semPlot")
+library(lavaan)
+library(semPlot)
+
+
+#define the models based on the multiple linear regression above
+model <- '
+Yield ~ R5.DX + R5.DW
+R5.DX ~ Pre.ratio + PreSCN.eggs
+R5.DW ~ PreSCN.cysts + V3.root'
+
+df.yield.14 <- df.yield[df.yield$Year=="2014",]
+df.yield.15 <- df.yield[df.yield$Year=="2015",]
+
+fit <- cfa(model, data = df.yield)
+fit14 <- cfa(model, data = df.yield.14)
+fit15 <- cfa(model, data = df.yield.15)
+
+semPaths(fit, 'std', 
+         edge.label.cex = 2,
+         sizeMan = 13, sizeMan2 = 7,
+         exoVar = FALSE, 
+         layout = 'tree2')
+semPaths(fit14, 'std',
+         edge.label.cex = 2,
+         sizeMan = 13, sizeMan2 = 7,
+         exoVar = FALSE, 
+         layout = 'tree2')
+semPaths(fit15, 'std',
+         edge.label.cex = 2,
+         sizeMan = 13, sizeMan2 = 7,
+         exoVar = FALSE, 
+         layout = 'tree2')
+
+
+```
+
+
+
+
+```{r Multiple Regression Photosynq}
+#Install and load all necessary packages
+#install.packages("MASS")
+library(MASS)
+
+#Since we only have 1 year of data, need to use original 2015 data file
+ppra.2015 <- read.csv("2015_master.csv")
+
+#This code is borrowed from "Heatmaps and correlations.Rmd" to get things on the right scale
+#See that file for details
+ppra.df <- ppra.2015[,-(1:6)]
+ppra.df <- ppra.df[,-53]
+ppra.df <- ppra.df[-(97:144),]
+row.list <- 0
+row.2015 <- 0
+for (i in 1:52) {
+  for (j in seq(1,96,2)) {
+    row.list <- row.list + 1
+    row.2015[[row.list]] <- (ppra.df[j, i] + ppra.df[j+1, i]) / 2
+  }
+}
+avg.2015.mat <- matrix(row.2015, ncol = 52, nrow = 48)
+colnames(avg.2015.mat) <- names(ppra.df)
+yield <- cbind(ppra.2015$Yield[97:144])
+colnames(yield) <- c("Yield")
+all.2015 <- cbind.data.frame(yield, avg.2015.mat)
+photo.2015 <- na.omit(all.2015)
+
+#Now, the rest of this code is borrowed from the above chunk, just adapted to do model building on 2015 data only
+#Determine n, number of observations
+n <- length(photo.2015[,1])
+
+#Generate the full linear model containing the whole data set
+full.fit.photo <- lm(Yield ~ V3.DW+
+                         V3.foliar+
+                         V3.root+
+                         R5.DW+
+                         R5.foliar+
+                         R5.root+
+                         Pre.ratio+
+                         PreSCN.cysts+ 
+                         PreSCN.eggs+
+                         PreSCN.juvs+ 
+                         Pre.spiral+
+                         V3.qPCR+
+                         R5.qPCR+
+                         V3.Phi2+
+                         V3.PhiNPQ+
+                         V3.PhiNO+
+                         V3.SPAD+
+                         V3.NPQt+
+                         V3.LEF+
+                         V3.qL,
+                         #R1.Phi2+
+                         #R1.PhiNPQ+
+                         #R1.PhiNO+
+                         #R1.SPAD+
+                         #R1.NPQt+
+                         #R1.LEF+
+                         #R1.qL, 
+                         data = photo.2015)
+
+#Determine best version of each model using stepwise AIC and BIC
+best.AIC.full.photo <- stepAIC(full.fit.photo, direction = "both")
+best.BIC.full.photo <- stepAIC(full.fit.photo, direction = "both", k=log(n))
+best.BIC.full.photo$anova
+#Check out the models before and after selection
+summary(full.fit.photo)
+summary(best.AIC.full.photo)
+summary(best.BIC.full.photo)
+best.BIC.full.photo$anova
+#So, the best model (according to BIC) to predict yield is:
+# Yield = V3.foliar + V3.root + R5.DW + R5.foliar + V3.Phi2 +
+#         V3.SPAD + V3.qL + R1.PhiNPQ + R1.PhiNO + R1.NPQt + R1.qL
+
+#Let's build a model to predict R5.DX
+#I have more observations for just R5.DX than I do for yield, so use that data set here
+df.DX.photo <- na.omit(ppra.df)
+#Determine n, number of observations
+n <- length(df.DX.photo[,1])
+
+#I need to remove confounding variables from this model (Anything R5, and foliar ratings)
+R5.DX.fit.photo <- lm(R5.DX ~ V3.DW+
+                         V3.root+
+                         Pre.ratio+
+                         PreSCN.cysts+ 
+                         PreSCN.eggs+
+                         PreSCN.juvs+ 
+                         Pre.spiral+
+                         V3.qPCR+
+                         V3.Phi2+
+                         V3.PhiNPQ+
+                         V3.PhiNO+
+                         V3.SPAD+
+                         V3.NPQt+
+                         V3.LEF+
+                         V3.qL,
+                         #R1.Phi2+
+                         #R1.PhiNPQ+
+                         #R1.PhiNO+
+                         #R1.SPAD+
+                         #R1.NPQt+
+                         #R1.LEF+
+                         #R1.qL,
+                         data = df.DX.photo)
+
+#Determine the best version of each model using stepwise AIC and BIC
+best.AIC.DX.photo <- stepAIC(R5.DX.fit.photo, direction = "both")
+best.BIC.DX.photo <- stepAIC(R5.DX.fit.photo, direction = "both", k=log(n))
+best.BIC.DX.photo$anova
+#Check out the models before and after selection
+summary(R5.DX.fit.photo)
+summary(best.AIC.DX.photo)
+summary(best.BIC.DX.photo)
+
+#So, the best model (according to BIC) to predict R5.DX is:
+# R5.DX = Pre.ratio + PreSCN.juvs + V3.PhiNPQ + V3.PhiNPQt + V3.qL +
+#         R1.Phi2 + R1.PhiNPQ + R1.PhiNO
+
+#Let's build a model to predict R5.DW
+#I need to remove confounding variables from this model (Anything R5, and DW)
+R5.DW.fit.photo <- lm(R5.DW ~ V3.foliar+
+                         V3.root+
+                         Pre.ratio+
+                         PreSCN.cysts+ 
+                         PreSCN.eggs+
+                         PreSCN.juvs+ 
+                         Pre.spiral+
+                         V3.qPCR+
+                         R5.qPCR+
+                         V3.Phi2+
+                         V3.PhiNPQ+
+                         V3.PhiNO+
+                         V3.SPAD+
+                         V3.NPQt+
+                         V3.LEF+
+                         V3.qL,
+                         #R1.Phi2+
+                         #R1.PhiNPQ+
+                         #R1.PhiNO+
+                         #R1.SPAD+
+                         #R1.NPQt+
+                         #1.LEF+
+                         #R1.qL,
+                         data = df.DX.photo)
+
+#Determine the best version of each model using stepwise AIC and BIC
+best.AIC.DW.photo <- stepAIC(R5.DW.fit.photo, direction = "both")
+best.BIC.DW.photo <- stepAIC(R5.DW.fit.photo, direction = "both", k=log(n))
+best.BIC.DW.photo$anova
+#Check out the models before and after selection
+summary(R5.DW.fit.photo)
+summary(best.AIC.DW.photo)
+summary(best.BIC.DW.photo)
+
+#So, the best model (according to BIC) to predict R5.DW is:
+# R5.DW = PreSCN.eggs + Pre.spiral + V3.Phi2 + R1.PhiNPQ + R1.PhiNO
+
+#Check each model
+#Creates 3 plots for each model
+model.check <- function(model){
+  library(MASS)
+  par(mfrow=c(1,1))
+  sresid <- studres(model) 
+  hist(sresid, freq=FALSE, 
+       main="Distribution of Studentized Residuals")
+  xfit<-seq(min(sresid),max(sresid),length=100) 
+  yfit<-dnorm(xfit) 
+  lines(xfit, yfit)
+  par(mfrow=c(2, 2))
+  plot(model)
+  #Check for autocorrelation of residuals
+  par(mfrow=c(1, 1))
+  acf(model$residuals)
+}
+
+model.check(full.fit.photo)
+model.check(best.BIC.full.photo)
+model.check(R5.DX.fit.photo)
+model.check(best.BIC.DX.photo)
+model.check(R5.DW.fit.photo)
+model.check(best.BIC.DW.photo)
+
+#All models look pretty good, althoough they are different than the models produced without photosynq data
+```
+
+##Cross Validation
+```{r Cross Validation}
+#Install and load all necessary packages
+#install.packages("caret")
+#install.packages("arm")
+#install.packages("proxy")
+library(caret)
+library(arm)
+library(proxy)
+
+#Extract only the variables from the best model according to BIC above
+summary(best.BIC.full)  #Yield, DW, DX
+summary(best.BIC.DX)    #DX, Year, pre.ratio, preSCN.eggs
+summary(best.BIC.DW)    #DW, V3.root, preSCN.cysts
+
+#Create data frames containing the required variables based on the best models above
+model.data1 <- data.frame(df.yield$Yield, 
+                          df.yield$R5.DW, df.yield$R5.DX)
+model.data2 <- data.frame(df.DX$R5.DX, 
+                          df.DX$Year, df.DX$Pre.ratio, df.DX$PreSCN.eggs)
+model.data3 <- data.frame(df.DX$R5.DW, 
+                          df.DX$V3.root, df.DX$PreSCN.cysts)
+colnames(model.data1) <- c("Yield","R5.DW","R5.DX")
+colnames(model.data2) <- c("R5.DX","Year", "Pre.Fv.qPCR", "Pre.SCN.eggs")
+colnames(model.data3) <- c("R5.DW","V3.root.rot","Pre.SCN.cysts")
+
+#Create the "testing" data containing only the risk factors (explanatory variables)
+testing.data1 <- model.data1[, c("R5.DW","R5.DX")]
+testing.data2 <- model.data2[, c("Year", "Pre.Fv.qPCR", "Pre.SCN.eggs")]
+testing.data3 <- model.data3[, c("V3.root.rot","Pre.SCN.cysts")]
+
+#Create a function to cross validate each model, make a prediction, and determine correlation between predicted and actual
+#This particular function does 10 iterations of the CV, prediction, and correlation
+#For a manuscript, I want to do 1000 iterations, and I ran this on an external server. To do this I changed the for statement to  be (i in 1:1000)
+CV.func1 <- function(model.data, test.data){
+  CV.df <- NULL
+  for (i in 1:10){
+    #Randomly select 5 data points from within the range of the testing data
+    startSet <- sample(1:dim(test.data)[1], 5)
+    #Create a data frame that is MISSING these random 5 data points
+    samplePool <- test.data[-startSet,]
+    #Select 75% of the data that has maximum distance from the randomly selected 5 data points
+    start <- test.data[startSet,]
+    newSamp <- maxDissim(start, samplePool, n = (0.75*length(test.data[,1])))
+    #Make the furthest 75% of the data the training data, and the remaining 25% the testing data
+    inTraining <- newSamp
+    training <- model.data[ inTraining,]
+    testing  <- model.data[-inTraining,]
+    colnames(training) <- c("response","factor1","factor2")
+    colnames(testing) <- c("response","factor1","factor2")
+    #training$factor1 <- as.factor(training$factor1)
+    #testing$factor1 <- as.factor(testing$factor1)
+    #Make sure the CV will perform the cross validation 10 times, each with 10 repeats
+    fitControl <- trainControl(method = "repeatedcv",
+                               number = 10,
+                               repeats = 10)
+    #Train the model
+    trained.fit <- train(response ~ ., data = training, 
+                         method = "lm",
+                         trControl = fitControl
+                         #intercept = 
+    )
+    #Use the model to predict the variable of interest
+    predicted.data <- predict(trained.fit, newdata = testing)
+    #Create a data frame containing the predicted data, actual data, and the difference
+    compare <- data.frame(predicted.data, testing[,1])
+    compare$difference <- compare[,1] - compare[,2]
+    #Run a correlation between predicted and actual, and export the results
+    cor <- cor.test(compare[,1], compare[,2], method = c("pearson"))
+    counter <- counter + 1
+    row <- data.frame(mean(compare[,1]),
+                      mean(compare[,2]),
+                      mean(compare$difference), 
+                      var(compare$difference), 
+                      cor$estimate,
+                      (cor$estimate * cor$estimate),
+                      cor$p.value,
+                      row.names = counter)
+    colnames(row) <- c("Mean Predict", "Mean Actual", "Mean Dif", "Variance", "R", "R2", "P")
+    CV.df <- rbind.data.frame(CV.df, row)
+    print(CV.df)
+  }
+  return(CV.df)
+}
+CV.func2 <- function(model.data, test.data){
+  CV.df <- NULL
+  for (i in 1:10){
+    #Randomly select 5 data points from within the range of the testing data
+    startSet <- sample(1:dim(test.data)[1], 5)
+    #Create a data frame that is MISSING these random 5 data points
+    samplePool <- test.data[-startSet,]
+    #Select 75% of the data that has maximum distance from the randomly selected 5 data points
+    start <- test.data[startSet,]
+    newSamp <- maxDissim(start, samplePool, n = (0.75*length(test.data[,1])))
+    #Make the furthest 75% of the data the training data, and the remaining 25% the testing data
+    inTraining <- newSamp
+    training <- model.data[ inTraining,]
+    testing  <- model.data[-inTraining,]
+    colnames(training) <- c("response","factor1","factor2","factor3")
+    colnames(testing) <- c("response","factor1","factor2","factor3")
+    training$factor1 <- as.factor(training$factor1)
+    testing$factor1 <- as.factor(testing$factor1)
+    #Make sure the CV will perform the cross validation 10 times, each with 10 repeats
+    fitControl <- trainControl(method = "repeatedcv",
+                               number = 10,
+                               repeats = 10)
+    #Train the model
+    trained.fit <- train(response ~ ., data = training, 
+                         method = "lm",
+                         trControl = fitControl
+                         #intercept = 
+    )
+    #Use the model to predict the variable of interest
+    predicted.data <- predict(trained.fit, newdata = testing)
+    #Create a data frame containing the predicted data, actual data, and the difference
+    compare <- data.frame(predicted.data, testing[,1])
+    compare$difference <- compare[,1] - compare[,2]
+    #Run a correlation between predicted and actual, and export the results
+    cor <- cor.test(compare[,1], compare[,2], method = c("pearson"))
+    counter <- counter + 1
+    row <- data.frame(mean(compare[,1]),
+                      mean(compare[,2]),
+                      mean(compare$difference), 
+                      var(compare$difference), 
+                      cor$estimate,
+                      (cor$estimate * cor$estimate),
+                      cor$p.value,
+                      row.names = counter)
+    colnames(row) <- c("Mean Predict", "Mean Actual", "Mean Dif", "Variance", "R", "R2", "P")
+    CV.df <- rbind.data.frame(CV.df, row)
+    print(CV.df)
+  }
+  return(CV.df)
+}
+
+#Use func1 to run on yield and DW (Since these only have 2 explanatory variables)
+counter <- 0
+yield.model.CV <- CV.func1(model.data1, testing.data1)
+counter <- 0
+R5.DW.model.CV <- CV.func1(model.data3, testing.data3)
+#Use func2 to run on DX (Since this has 3 explanatory variables)
+counter <- 0
+R5.DX.model.CV <- CV.func2(model.data2, testing.data2)
+
+#Export the info to a table
+#write.table(yield.model.CV, file = "yield.model.1000.CV.csv", sep = ",", col.names = T)
+#write.table(R5.DX.model.CV, file = "R5.DX.model.1000.CV.csv", sep = ",", col.names = T)
+#write.table(R5.DW.model.CV, file = "R5.DW.model.1000.CV.csv", sep = ",", col.names = T)
+
+#This function will count the number of times the model predictions had a significant correlation to the actual data we observed
+#It will return a % accuracy (% of the 1000 times the correlation was significant at P < 0.05)
+#Reset sig and insig counters each time!
+sig.insig <- function(P){
+  for (i in P){
+    if (i < 0.05){
+     sig <- sig + 1
+   }
+   else if (i > 0.05){
+     insig <- sig + 1
+   }
+  }
+  return((sig/(sig + insig))*100)
+}
+sig <- 0
+insig <- 0
+yield.model.acc <- sig.insig(yield.model.CV$P)
+sig <- 0
+insig <- 0
+R5.DW.model.acc <- sig.insig(R5.DW.model.CV$P)
+sig <- 0
+insig <- 0
+R5.DX.model.acc <- sig.insig(R5.DX.model.CV$P)
+
+#Check out the % accuracy
+yield.model.acc
+R5.DW.model.acc
+R5.DX.model.acc
+```
