@@ -1,16 +1,8 @@
----
-title: "Multivariate_SDS_analysis"
-author: "Mitch Roth"
-author2: "Zachary Noel"
-date: "May 14, 2016"
-output: 
-  md_document:
-    variant: markdown_github
----
+### Import the data
 
-###Import the data
 Note, the 2014 variables that contained 96 data points needed to be averaged in order to generate 24 data points that aligned with the 24 SDS.DX ratings taken in 2014.
-```{r, message=FALSE, warning=FALSE}
+
+``` r
 #Import the 2015 data
 df.2015 <- read.csv("2015_master.csv")
 #Only take the first 96 data points - this excludes yield, which had 48 data points
@@ -100,18 +92,28 @@ all.2015 <- df2.2015[,-c(1:6)] #Drops "x", "y", Pass, Range, Sample, and Section
 
 #Should be 96
 nrow(all.2015)
+```
+
+    ## [1] 96
+
+``` r
 #Should be 24
 nrow(all.2014)
 ```
 
+    ## [1] 24
+
 Next, pick the colors that you want to plot with, and create a custom color palette
-```{r Color palette}
+
+``` r
 color.pal <- c("#006600","#FFFFFF")
 color.func <- colorRampPalette(color.pal)
 ```
 
-##3D Plots
-```{r 3D plots}
+3D Plots
+--------
+
+``` r
 year <- "2014"
 df1 <- cbind.data.frame(year, 
                         all.2014$Pre.ratio,
@@ -130,6 +132,11 @@ df.3d <- df.3d[order(df.3d$R5DX),]
 #install.packages("plot3D")
 library(plot3D)
 length(df.3d$R5DX)
+```
+
+    ## [1] 120
+
+``` r
 fit <- lm(df.3d$R5DX ~ df.3d$Fv + df.3d$SCN)
 grid.lines = 10
 x.pred <- seq(min(df.3d$Fv), max(df.3d$Fv), length.out = grid.lines)
@@ -137,6 +144,11 @@ y.pred <- seq(min(df.3d$SCN), max(df.3d$SCN), length.out = grid.lines)
 xy <- expand.grid( x = x.pred, y = y.pred)
 z.pred <- matrix(predict(fit, newdata = xy), 
                  nrow = grid.lines, ncol = grid.lines)
+```
+
+    ## Warning: 'newdata' had 100 rows but variables found have 120 rows
+
+``` r
 fitpoints <- predict(fit)
 
 #3d plots are colored by 3rd (z) variable (R5DX)
@@ -158,9 +170,14 @@ scatter3D(df.3d$Fv, df.3d$SCN, df.3d$R5DX,
           )
 ```
 
-## Principle Coordinates analysis 
+![](Multivariate_SDS_Analysis_files/figure-markdown_github/3D%20plots-1.png)
+
+Principle Coordinates analysis
+------------------------------
+
 Using raw qPCR values and nematode quantities so that they are the same type of variable (as opposed to a ratio and raw quantities)
-```{r PCoA}
+
+``` r
 #Install and load packages as necessary
 #install.packages("ape")
 #install.packages("ecodist")
@@ -169,6 +186,22 @@ Using raw qPCR values and nematode quantities so that they are the same type of 
 library(ape)
 library(ecodist)
 library(vegan)
+```
+
+    ## Loading required package: permute
+
+    ## Loading required package: lattice
+
+    ## This is vegan 2.5-3
+
+    ## 
+    ## Attaching package: 'vegan'
+
+    ## The following object is masked from 'package:ecodist':
+    ## 
+    ##     mantel
+
+``` r
 library(ggplot2)
 
 #Extract only the pre-planting variables of interest
@@ -225,6 +258,11 @@ pre.cmd <- cmdscale(pre.bray, k = rank.pre, eig = TRUE)
 prop.pre <- as.matrix((pre.cmd$eig/sum(pre.cmd$eig))*100)
 #This will determine the % variation explained for each dimention
 prop.pre[1:rank.pre]
+```
+
+    ## [1] 58.638004 33.794146 10.975768  4.416834  2.855572
+
+``` r
 #So, dimention 1 explains 70.94%, Dimention 2 explains 16.27%, etc.
 
 #Plot eigenvectors to determine which dimensions explain a significant amount of variance
@@ -232,6 +270,11 @@ barplot(pre.cmd$eig[1:rank.pre], main="",
    xlab="Dimensions", ylab = "Eigenvalues")
 lines(pre.cmd$values)
 abline(h = mean(pre.cmd$eig[1:rank.pre]), col = "red", lty = 2)
+```
+
+![](Multivariate_SDS_Analysis_files/figure-markdown_github/PCoA-1.png)
+
+``` r
 #The first 2 dimensions explain significant variance
 #Extract points for plotting the first two dimensions in a PCO plot
 pre.pco <- as.data.frame(pre.cmd$points)
@@ -292,8 +335,11 @@ p <- ggplot(pre.pco, aes(x = V1, y = V2, color = pre.pco$R5.DX)) +
 p
 ```
 
-A biplot is a great way to visualize PCO with input variables added as vectors. 
-```{r PCO Biplot}
+![](Multivariate_SDS_Analysis_files/figure-markdown_github/PCoA-2.png)
+
+A biplot is a great way to visualize PCO with input variables added as vectors.
+
+``` r
 #Install and load packages as necessary
 #install.packages("ape")
 #install.packages("ecodist")
@@ -303,7 +349,15 @@ library(ape)
 library(ecodist)
 library(devtools)
 library(ggbiplot)
+```
 
+    ## Loading required package: plyr
+
+    ## Loading required package: scales
+
+    ## Loading required package: grid
+
+``` r
 #Extract only the pre-planting variables of interest
 #For plotting biplot, comment out "Year"
 #For doing levine's and bartlett tests, keep "year" in
@@ -357,15 +411,33 @@ pre.plant.scale <- scale(pre.plant.4PCO, scale = TRUE, center = TRUE)
 #Perform the PCO
 pre.pca <- prcomp(pre.plant.4PCO)
 pre.pca$sdev
+```
+
+    ## [1] 258.21472 236.28064  26.83374  16.73489   0.88049
+
+``` r
 pre.eig <- eigen(var(pre.plant.4PCO))
 #List the dimensions in order of variance explained
 as.matrix((pre.eig$values/sum(pre.eig$values))*100)
+```
 
+    ##              [,1]
+    ## [1,] 5.398586e+01
+    ## [2,] 4.520374e+01
+    ## [3,] 5.830159e-01
+    ## [4,] 2.267585e-01
+    ## [5,] 6.277214e-04
+
+``` r
 #Plot eigenvectors to determine which dimensions explain a significant amount of variance
 barplot(pre.eig$values, main="",
    xlab="Dimensions", ylab = "Eigenvalues")
 abline(h = mean(pre.eig$values), col = "red", lty = 2)
+```
 
+![](Multivariate_SDS_Analysis_files/figure-markdown_github/PCO%20Biplot-1.png)
+
+``` r
 #Extract the PCO points for plotting the biplot, and add R5.DX for coloration
 pre.points <- pre.pca$x
 pre.pco <- as.data.frame(pre.points)
@@ -397,11 +469,13 @@ ggbiplot(pre.pca, choices = 1:2, obs.scale = 1, var.scale = 1,
         axis.title.y = element_text(size = 20, face = "bold"),
         legend.title = element_text(size  = 0, face = "bold"),
         legend.text = element_text(size  = 20, face = "bold"))
-
 ```
 
+![](Multivariate_SDS_Analysis_files/figure-markdown_github/PCO%20Biplot-2.png)
+
 To examine how much each variable is contributing to explaining the variance in the PCO, use correlations to see how well each individual variable correlates to the first two dimensions
-```{r Correlations to PCO}
+
+``` r
 #Correlate Pre.qPCR with dimension 1
 cor1 <- cor.test(pre.pco$PC1, y = pre.pco$Pre.qPCR)
 #Correlate Pre.qPCR with dimension 2
@@ -418,25 +492,221 @@ cor5.2 <- cor.test(pre.pco$PC2, y = pre.pco$Pre.dagger)
 
 #Print the correlations for making a table
 cor1
-cor1.2
-cor2
-cor2.2
-cor3
-cor3.2
-cor4
-cor4.2
-cor5
-cor5.2
+```
 
+    ## 
+    ##  Pearson's product-moment correlation
+    ## 
+    ## data:  pre.pco$PC1 and pre.pco$Pre.qPCR
+    ## t = 15.507, df = 118, p-value < 2.2e-16
+    ## alternative hypothesis: true correlation is not equal to 0
+    ## 95 percent confidence interval:
+    ##  0.7498780 0.8704839
+    ## sample estimates:
+    ##       cor 
+    ## 0.8190337
+
+``` r
+cor1.2
+```
+
+    ## 
+    ##  Pearson's product-moment correlation
+    ## 
+    ## data:  pre.pco$PC2 and pre.pco$Pre.qPCR
+    ## t = 7.6094, df = 118, p-value = 7.399e-12
+    ## alternative hypothesis: true correlation is not equal to 0
+    ## 95 percent confidence interval:
+    ##  0.4397168 0.6827659
+    ## sample estimates:
+    ##       cor 
+    ## 0.5737387
+
+``` r
+cor2
+```
+
+    ## 
+    ##  Pearson's product-moment correlation
+    ## 
+    ## data:  pre.pco$PC1 and pre.pco$PreSCN.juvs
+    ## t = -9.0786, df = 118, p-value = 3.016e-15
+    ## alternative hypothesis: true correlation is not equal to 0
+    ## 95 percent confidence interval:
+    ##  -0.7359304 -0.5220441
+    ## sample estimates:
+    ##        cor 
+    ## -0.6412797
+
+``` r
+cor2.2
+```
+
+    ## 
+    ##  Pearson's product-moment correlation
+    ## 
+    ## data:  pre.pco$PC2 and pre.pco$PreSCN.juvs
+    ## t = 12.997, df = 118, p-value < 2.2e-16
+    ## alternative hypothesis: true correlation is not equal to 0
+    ## 95 percent confidence interval:
+    ##  0.6818374 0.8321039
+    ## sample estimates:
+    ##       cor 
+    ## 0.7673039
+
+``` r
+cor3
+```
+
+    ## 
+    ##  Pearson's product-moment correlation
+    ## 
+    ## data:  pre.pco$PC1 and pre.pco$Pre.spiral
+    ## t = -5.9921, df = 118, p-value = 2.307e-08
+    ## alternative hypothesis: true correlation is not equal to 0
+    ## 95 percent confidence interval:
+    ##  -0.6094812 -0.3325549
+    ## sample estimates:
+    ##        cor 
+    ## -0.4830054
+
+``` r
+cor3.2
+```
+
+    ## 
+    ##  Pearson's product-moment correlation
+    ## 
+    ## data:  pre.pco$PC2 and pre.pco$Pre.spiral
+    ## t = -0.10558, df = 118, p-value = 0.9161
+    ## alternative hypothesis: true correlation is not equal to 0
+    ## 95 percent confidence interval:
+    ##  -0.1886314  0.1698185
+    ## sample estimates:
+    ##          cor 
+    ## -0.009718673
+
+``` r
+cor4
+```
+
+    ## 
+    ##  Pearson's product-moment correlation
+    ## 
+    ## data:  pre.pco$PC1 and pre.pco$Pre.lesion
+    ## t = 1.3034, df = 118, p-value = 0.195
+    ## alternative hypothesis: true correlation is not equal to 0
+    ## 95 percent confidence interval:
+    ##  -0.0614239  0.2921325
+    ## sample estimates:
+    ##      cor 
+    ## 0.119129
+
+``` r
+cor4.2
+```
+
+    ## 
+    ##  Pearson's product-moment correlation
+    ## 
+    ## data:  pre.pco$PC2 and pre.pco$Pre.lesion
+    ## t = 2.1479, df = 118, p-value = 0.03376
+    ## alternative hypothesis: true correlation is not equal to 0
+    ## 95 percent confidence interval:
+    ##  0.0152675 0.3606789
+    ## sample estimates:
+    ##      cor 
+    ## 0.193978
+
+``` r
+cor5
+```
+
+    ## 
+    ##  Pearson's product-moment correlation
+    ## 
+    ## data:  pre.pco$PC1 and pre.pco$Pre.dagger
+    ## t = 0.36407, df = 118, p-value = 0.7165
+    ## alternative hypothesis: true correlation is not equal to 0
+    ## 95 percent confidence interval:
+    ##  -0.1466247  0.2114687
+    ## sample estimates:
+    ##        cor 
+    ## 0.03349698
+
+``` r
+cor5.2
+```
+
+    ## 
+    ##  Pearson's product-moment correlation
+    ## 
+    ## data:  pre.pco$PC2 and pre.pco$Pre.dagger
+    ## t = 0.576, df = 118, p-value = 0.5657
+    ## alternative hypothesis: true correlation is not equal to 0
+    ## 95 percent confidence interval:
+    ##  -0.1275007  0.2300091
+    ## sample estimates:
+    ##        cor 
+    ## 0.05295073
+
+``` r
 #Plot the correlations to see how well they correlate
 plot(pre.pco$PC1 ~ pre.pco$Pre.qPCR)
+```
+
+![](Multivariate_SDS_Analysis_files/figure-markdown_github/Correlations%20to%20PCO-1.png)
+
+``` r
 plot(pre.pco$PC1 ~ pre.pco$PreSCN.juvs)
+```
+
+![](Multivariate_SDS_Analysis_files/figure-markdown_github/Correlations%20to%20PCO-2.png)
+
+``` r
 plot(pre.pco$PC1 ~ pre.pco$Pre.spiral)
+```
+
+![](Multivariate_SDS_Analysis_files/figure-markdown_github/Correlations%20to%20PCO-3.png)
+
+``` r
 plot(pre.pco$PC1 ~ pre.pco$Pre.lesion)
+```
+
+![](Multivariate_SDS_Analysis_files/figure-markdown_github/Correlations%20to%20PCO-4.png)
+
+``` r
 plot(pre.pco$PC1 ~ pre.pco$Pre.dagger)
+```
+
+![](Multivariate_SDS_Analysis_files/figure-markdown_github/Correlations%20to%20PCO-5.png)
+
+``` r
 plot(pre.pco$PC2 ~ pre.pco$Pre.qPCR)
+```
+
+![](Multivariate_SDS_Analysis_files/figure-markdown_github/Correlations%20to%20PCO-6.png)
+
+``` r
 plot(pre.pco$PC2 ~ pre.pco$PreSCN.juvs)
+```
+
+![](Multivariate_SDS_Analysis_files/figure-markdown_github/Correlations%20to%20PCO-7.png)
+
+``` r
 plot(pre.pco$PC2 ~ pre.pco$Pre.spiral)
+```
+
+![](Multivariate_SDS_Analysis_files/figure-markdown_github/Correlations%20to%20PCO-8.png)
+
+``` r
 plot(pre.pco$PC2 ~ pre.pco$Pre.lesion)
+```
+
+![](Multivariate_SDS_Analysis_files/figure-markdown_github/Correlations%20to%20PCO-9.png)
+
+``` r
 plot(pre.pco$PC2 ~ pre.pco$Pre.dagger)
 ```
+
+![](Multivariate_SDS_Analysis_files/figure-markdown_github/Correlations%20to%20PCO-10.png)
