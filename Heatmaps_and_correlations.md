@@ -1,29 +1,56 @@
----
-title: "Heatmaps and Correlations"
-author: "Mitch Roth"
-date: "March 22, 2016"
-output:
-  md_document:
-    variant: markdown_github
----
+Import and organize the data
+----------------------------
 
-##Import and organize the data
-```{r Import}
+``` r
 #Install and load any necessary packages
 #install.packages("fields")
 #install.packages("geoR")
 library(fields)
-library(geoR)
+```
 
+    ## Loading required package: spam
+
+    ## Loading required package: dotCall64
+
+    ## Loading required package: grid
+
+    ## Spam version 2.2-0 (2018-06-19) is loaded.
+    ## Type 'help( Spam)' or 'demo( spam)' for a short introduction 
+    ## and overview of this package.
+    ## Help for individual functions is also obtained by adding the
+    ## suffix '.spam' to the function name, e.g. 'help( chol.spam)'.
+
+    ## 
+    ## Attaching package: 'spam'
+
+    ## The following objects are masked from 'package:base':
+    ## 
+    ##     backsolve, forwardsolve
+
+    ## Loading required package: maps
+
+    ## See www.image.ucar.edu/~nychka/Fields for
+    ##  a vignette and other supplements.
+
+``` r
+library(geoR)
+```
+
+    ## --------------------------------------------------------------
+    ##  Analysis of Geostatistical Data
+    ##  For an Introduction to geoR go to http://www.leg.ufpr.br/geoR
+    ##  geoR version 1.7-5.2.1 (built on 2016-05-02) is now loaded
+    ## --------------------------------------------------------------
+
+``` r
 #Load the data
 ppra.2015 <- read.csv("2015_master.csv")
 ppra.2014 <- read.csv("2014_master.csv")
 ```
 
-Convert data to geodata
-Apply spatial information to the variables, as type "geodata"
-This is a bit tricky, and specific for these data sets, but they work
-```{r Convert data to geodata}
+Convert data to geodata Apply spatial information to the variables, as type "geodata" This is a bit tricky, and specific for these data sets, but they work
+
+``` r
 geo.list.2015 <- NULL
 geo.list.2014a <- NULL
 geo.list.2014b <- NULL
@@ -37,6 +64,17 @@ for (i in z){
   row.z <- row.z + 1
   geo.list.2015[[row.z]] <- as.geodata(ppra.2015[1:96,], data.col = i)
 }
+```
+
+    ## as.geodata: 8 points removed due to NA in the data
+    ## as.geodata: 8 points removed due to NA in the data
+    ## as.geodata: 8 points removed due to NA in the data
+    ## as.geodata: 8 points removed due to NA in the data
+    ## as.geodata: 8 points removed due to NA in the data
+    ## as.geodata: 8 points removed due to NA in the data
+    ## as.geodata: 8 points removed due to NA in the data
+
+``` r
 geo.list.2015[[53]] <- as.geodata(ppra.2015[97:144,], data.col = 59)
 for (i in zz){
   row.zz <- row.zz + 1
@@ -51,18 +89,22 @@ names(geo.list.2015) <- colnames(ppra.2015[7:59])
 names(geo.list.2014a) <- colnames(ppra.2014[7:35])
 names(geo.list.2014b) <- colnames(ppra.2014[36:45])
 ```
+
 Now, all variables can be read as geodata from geo.list$variable
 
 Next, pick the colors that you want to plot with, and create a custom color palette
-```{r Color palette}
+
+``` r
 color.pal <- c("#006600","#FFFFFF")
 color.func <- colorRampPalette(color.pal)
 ```
 
-##Spatial plots of raw data
-I'm looking at pre-Fv, pre-SCN eggs, R5 disease index, and yield
-First, load the raw data
-```{r Spatial plots of 2015 raw data}
+Spatial plots of raw data
+-------------------------
+
+I'm looking at pre-Fv, pre-SCN eggs, R5 disease index, and yield First, load the raw data
+
+``` r
 #Pre.ratio.2015 is currently in ng Fv DNA / ng total DNA
 Pre.ratio.2015 <- matrix(ppra.2015$Pre.ratio[1:96], ncol = 6, nrow = 16)
 #Convert Pre.ratio.2015 into fg Fv DNA / ng total DNA by * 1,000,000
@@ -191,13 +233,32 @@ title("2015 Pre-planting Fv quantities", cex.main = 1.5)
 fields.krig(geo.list.2015$PreSCN.eggs)
 title("2015 Pre-planting SCN eggs", cex.main = 1.5)
 fields.krig(geo.list.2015$R5.DX)
+```
+
+    ## Warning: 
+    ## Grid searches over lambda (nugget and sill variances) with  minima at the endpoints: 
+    ##   (REML) Restricted maximum likelihood 
+    ##    minimum at  right endpoint  lambda  =  0.04520064 (eff. df= 91.19999 )
+
+``` r
 title("2015 R5 in-field Disease Index", cex.main = 1.5)
 fields.krig.yield(geo.list.2015$Yield)
+```
+
+    ## Warning: 
+    ## Grid searches over lambda (nugget and sill variances) with  minima at the endpoints: 
+    ##   (REML) Restricted maximum likelihood 
+    ##    minimum at  right endpoint  lambda  =  0.05117423 (eff. df= 45.60001 )
+
+``` r
 title("2015 Soybean Yield", cex.main = 1.5)
 ```
 
+![](Heatmaps_and_correlations_files/figure-markdown_github/Spatial%20plots%20of%202015%20raw%20data-1.png)
+
 Now, repeat with 2014 data
-```{r Spatial plots of 2014 raw data}
+
+``` r
 Pre.ratio.2014 <- matrix(ppra.2014$Pre.ratio[1:96], ncol = 6, nrow = 16)
 Pre.ratio.2014 <- Pre.ratio.2014 * 1000000
 Pre.SCN.eggs.2014 <- matrix(ppra.2014$PreSCN.eggs[1:96], ncol = 6, nrow = 16)
@@ -284,22 +345,47 @@ title("Yield (bu/acre)", cex.main = 1.5)
 
 geo.list.2014a$Pre.ratio$data <- geo.list.2014a$Pre.ratio$data * 1000000
 fields.krig(geo.list.2014a$Pre.ratio)
+```
+
+    ## Warning: 
+    ## Grid searches over lambda (nugget and sill variances) with  minima at the endpoints: 
+    ##   (REML) Restricted maximum likelihood 
+    ##    minimum at  right endpoint  lambda  =  0.04520064 (eff. df= 91.19999 )
+
+``` r
 title("Pre-planting Fv quantities", cex.main = 1.5)
 fields.krig(geo.list.2014a$PreSCN.eggs)
 title("2014 Pre-planting SCN eggs", cex.main = 1.5)
 fields.krig(geo.list.2014b$R5.DX)
+```
+
+    ## Warning: 
+    ## Grid searches over lambda (nugget and sill variances) with  minima at the endpoints: 
+    ##   (REML) Restricted maximum likelihood 
+    ##    minimum at  right endpoint  lambda  =  0.06003311 (eff. df= 22.79999 )
+
+``` r
 title("R5 Foliar SDS Disease Index", cex.main = 1.5)
 fields.krig.yield(geo.list.2014b$Yield)
+```
+
+    ## Warning: 
+    ## Grid searches over lambda (nugget and sill variances) with  minima at the endpoints: 
+    ##   (REML) Restricted maximum likelihood 
+    ##    minimum at  right endpoint  lambda  =  0.06003311 (eff. df= 22.79999 )
+
+``` r
 title("Soybean Yield", cex.main = 1.5)
 ```
 
-##LLoyd's Index of Patchiness
-To determine if any of the variables collected are significantly aggregated, calculate an LIP value
-From [Nordmeyer et al 2009:](http://www.stat.purdue.edu/~zhanghao/ASS/Reference%20Papers/Spatial%20and%20temporal%20dynamics%20of%20seeding%20population.pdf)
-Calculated as [mean + ((var/mean) - 1)] / mean
-If LIP is less than 1, it is not patchy but random
-If LIP is greater than one, there is significant aggregation
-```{r LIP analysis}
+![](Heatmaps_and_correlations_files/figure-markdown_github/Spatial%20plots%20of%202014%20raw%20data-1.png)
+
+LLoyd's Index of Patchiness
+---------------------------
+
+To determine if any of the variables collected are significantly aggregated, calculate an LIP value From [Nordmeyer et al 2009:](http://www.stat.purdue.edu/~zhanghao/ASS/Reference%20Papers/Spatial%20and%20temporal%20dynamics%20of%20seeding%20population.pdf) Calculated as \[mean + ((var/mean) - 1)\] / mean If LIP is less than 1, it is not patchy but random If LIP is greater than one, there is significant aggregation
+
+``` r
 LIP.calc <- function(x){
   y <- as.vector(x)
   LIP <- (mean(y) + ((var(y) / mean(y))-1)) / mean(y)
@@ -308,76 +394,365 @@ LIP.calc <- function(x){
 }
 
 LIP.calc(Pre.ratio.2014)
+```
+
+    ## LIP is  0.0797809252310824
+
+``` r
 LIP.calc(Pre.ratio.2015)
+```
+
+    ## LIP is  0.902438903413806
+
+``` r
 #Since LIP is meant to be used on count data, not density (proportional) data, try it with raw qPCR values
 LIP.calc(ppra.2014$Pre.qPCR[1:96]) # Greater than 1
-LIP.calc(ppra.2015$Pre.qPCR[1:96]) # Greater than 1
-LIP.calc(ppra.2014$V3.DW[1:96])
-LIP.calc(ppra.2015$V3.DW[1:96])
-LIP.calc(ppra.2014$R5.DW[1:96])
-LIP.calc(ppra.2015$R5.DW[1:96])
-LIP.calc(ppra.2014$V3.foliar[1:96])
-LIP.calc(ppra.2015$V3.foliar[1:96])
-LIP.calc(ppra.2014$V3.root[1:96])
-LIP.calc(ppra.2015$V3.root[1:96])
-LIP.calc(ppra.2014$R5.foliar[1:96])
-LIP.calc(ppra.2015$R5.foliar[1:96])
-LIP.calc(ppra.2014$R5.root[1:96])
-LIP.calc(ppra.2015$R5.root[1:96])
-LIP.calc(ppra.2014$PreSCN.cysts[1:96])
-LIP.calc(ppra.2014$PreSCN.eggs[1:96])
-LIP.calc(ppra.2014$PreSCN.juvs[1:96])
-LIP.calc(ppra.2015$PreSCN.cysts[1:96])
-LIP.calc(ppra.2015$PreSCN.eggs[1:96])
-LIP.calc(ppra.2015$PreSCN.juvs[1:96])
-LIP.calc(ppra.2014$Pre.spiral[1:96])
-LIP.calc(ppra.2014$Pre.lesion[1:96])
-LIP.calc(ppra.2014$Pre.dagger[1:96])
-LIP.calc(ppra.2015$Pre.spiral[1:96])
-LIP.calc(ppra.2015$Pre.lesion[1:96])
-LIP.calc(ppra.2015$Pre.dagger[1:96])
-LIP.calc(ppra.2014$PostSCN.cysts[1:96])
-LIP.calc(ppra.2014$PostSCN.eggs[1:96])
-LIP.calc(ppra.2014$PostSCN.juvs[1:96])
-LIP.calc(ppra.2015$PostSCN.cysts[1:96])
-LIP.calc(ppra.2015$PostSCN.eggs[1:96])
-LIP.calc(ppra.2015$PostSCN.juvs[1:96])
-LIP.calc(ppra.2014$Post.spiral[1:96])
-LIP.calc(ppra.2014$Post.lesion[1:96])
-LIP.calc(ppra.2015$Post.spiral[1:96])
-LIP.calc(ppra.2015$Post.lesion[1:96])
-LIP.calc(ppra.2014$Pre.qPCR[1:96])
-LIP.calc(ppra.2015$Pre.qPCR[1:96])
-LIP.calc(ppra.2014$V3.qPCR[1:96])
-LIP.calc(ppra.2015$V3.qPCR[1:96])
-LIP.calc(ppra.2014$R5.qPCR[1:96])
-LIP.calc(ppra.2015$R5.qPCR[1:96])
-LIP.calc(ppra.2014$Post.qPCR[1:96])
-LIP.calc(ppra.2015$Post.qPCR[1:96])
-LIP.calc((ppra.2014$Post.ratio[1:96])*1000000)
-LIP.calc((ppra.2015$Post.ratio[1:96])*1000000)
-LIP.calc(ppra.2014$R4.DX[97:120])
-LIP.calc(ppra.2015$R4.DX[1:96])
-LIP.calc(ppra.2014$R5.DX[97:120])
-LIP.calc(ppra.2015$R5.DX[1:96])
-LIP.calc(ppra.2014$R6.DX[97:120])
-LIP.calc(ppra.2015$R6.DX[1:96])
-LIP.calc(ppra.2014$Yield[97:120])
-LIP.calc(ppra.2015$Yield[97:144])
+```
 
+    ## LIP is  1.07773487911001
+
+``` r
+LIP.calc(ppra.2015$Pre.qPCR[1:96]) # Greater than 1
+```
+
+    ## LIP is  1.10411563206122
+
+``` r
+LIP.calc(ppra.2014$V3.DW[1:96])
+```
+
+    ## LIP is  -0.505552561882913
+
+``` r
+LIP.calc(ppra.2015$V3.DW[1:96])
+```
+
+    ## LIP is  -0.595634356505912
+
+``` r
+LIP.calc(ppra.2014$R5.DW[1:96])
+```
+
+    ## LIP is  0.847459500761406
+
+``` r
+LIP.calc(ppra.2015$R5.DW[1:96])
+```
+
+    ## LIP is  0.886836036733507
+
+``` r
+LIP.calc(ppra.2014$V3.foliar[1:96])
+```
+
+    ## LIP is  1.15823216293451
+
+``` r
+LIP.calc(ppra.2015$V3.foliar[1:96])
+```
+
+    ## LIP is  9.99573657162302
+
+``` r
+LIP.calc(ppra.2014$V3.root[1:96])
+```
+
+    ## LIP is  1.24120460194861
+
+``` r
+LIP.calc(ppra.2015$V3.root[1:96])
+```
+
+    ## LIP is  1.21456200508314
+
+``` r
+LIP.calc(ppra.2014$R5.foliar[1:96])
+```
+
+    ## LIP is  0.894848891240704
+
+``` r
+LIP.calc(ppra.2015$R5.foliar[1:96])
+```
+
+    ## LIP is  1.11246491812622
+
+``` r
+LIP.calc(ppra.2014$R5.root[1:96])
+```
+
+    ## LIP is  1.17901450792282
+
+``` r
+LIP.calc(ppra.2015$R5.root[1:96])
+```
+
+    ## LIP is  1.68967961881111
+
+``` r
+LIP.calc(ppra.2014$PreSCN.cysts[1:96])
+```
+
+    ## LIP is  1.3100390625937
+
+``` r
+LIP.calc(ppra.2014$PreSCN.eggs[1:96])
+```
+
+    ## LIP is  1.36432349434713
+
+``` r
+LIP.calc(ppra.2014$PreSCN.juvs[1:96])
+```
+
+    ## LIP is  1.57933275363862
+
+``` r
+LIP.calc(ppra.2015$PreSCN.cysts[1:96])
+```
+
+    ## LIP is  1.25800644468314
+
+``` r
+LIP.calc(ppra.2015$PreSCN.eggs[1:96])
+```
+
+    ## LIP is  1.44280536909704
+
+``` r
+LIP.calc(ppra.2015$PreSCN.juvs[1:96])
+```
+
+    ## LIP is  1.45476358337924
+
+``` r
+LIP.calc(ppra.2014$Pre.spiral[1:96])
+```
+
+    ## LIP is  1.74008336682328
+
+``` r
+LIP.calc(ppra.2014$Pre.lesion[1:96])
+```
+
+    ## LIP is  NaN
+
+``` r
+LIP.calc(ppra.2014$Pre.dagger[1:96])
+```
+
+    ## LIP is  NaN
+
+``` r
+LIP.calc(ppra.2015$Pre.spiral[1:96])
+```
+
+    ## LIP is  1.73186619924728
+
+``` r
+LIP.calc(ppra.2015$Pre.lesion[1:96])
+```
+
+    ## LIP is  4.78297873228996
+
+``` r
+LIP.calc(ppra.2015$Pre.dagger[1:96])
+```
+
+    ## LIP is  30.3684210526316
+
+``` r
+LIP.calc(ppra.2014$PostSCN.cysts[1:96])
+```
+
+    ## LIP is  1.24420331155248
+
+``` r
+LIP.calc(ppra.2014$PostSCN.eggs[1:96])
+```
+
+    ## LIP is  1.26394264047836
+
+``` r
+LIP.calc(ppra.2014$PostSCN.juvs[1:96])
+```
+
+    ## LIP is  1.41112273752746
+
+``` r
+LIP.calc(ppra.2015$PostSCN.cysts[1:96])
+```
+
+    ## LIP is  1.66581008198032
+
+``` r
+LIP.calc(ppra.2015$PostSCN.eggs[1:96])
+```
+
+    ## LIP is  1.79498673397302
+
+``` r
+LIP.calc(ppra.2015$PostSCN.juvs[1:96])
+```
+
+    ## LIP is  2.49203707006219
+
+``` r
+LIP.calc(ppra.2014$Post.spiral[1:96])
+```
+
+    ## LIP is  1.79275148886573
+
+``` r
+LIP.calc(ppra.2014$Post.lesion[1:96])
+```
+
+    ## LIP is  16.6789473684211
+
+``` r
+LIP.calc(ppra.2015$Post.spiral[1:96])
+```
+
+    ## LIP is  2.40502347280945
+
+``` r
+LIP.calc(ppra.2015$Post.lesion[1:96])
+```
+
+    ## LIP is  7.96250543714659
+
+``` r
+LIP.calc(ppra.2014$Pre.qPCR[1:96])
+```
+
+    ## LIP is  1.07773487911001
+
+``` r
+LIP.calc(ppra.2015$Pre.qPCR[1:96])
+```
+
+    ## LIP is  1.10411563206122
+
+``` r
+LIP.calc(ppra.2014$V3.qPCR[1:96])
+```
+
+    ## LIP is  0.866382535638941
+
+``` r
+LIP.calc(ppra.2015$V3.qPCR[1:96])
+```
+
+    ## LIP is  1.0981822791779
+
+``` r
+LIP.calc(ppra.2014$R5.qPCR[1:96])
+```
+
+    ## LIP is  0.860484231330568
+
+``` r
+LIP.calc(ppra.2015$R5.qPCR[1:96])
+```
+
+    ## LIP is  0.863709866589326
+
+``` r
+LIP.calc(ppra.2014$Post.qPCR[1:96])
+```
+
+    ## LIP is  1.9218782765723
+
+``` r
+LIP.calc(ppra.2015$Post.qPCR[1:96])
+```
+
+    ## LIP is  1.12974343830696
+
+``` r
+LIP.calc((ppra.2014$Post.ratio[1:96])*1000000)
+```
+
+    ## LIP is  1.52156242644103
+
+``` r
+LIP.calc((ppra.2015$Post.ratio[1:96])*1000000)
+```
+
+    ## LIP is  0.893328392122597
+
+``` r
+LIP.calc(ppra.2014$R4.DX[97:120])
+```
+
+    ## LIP is  1.56715787469571
+
+``` r
+LIP.calc(ppra.2015$R4.DX[1:96])
+```
+
+    ## LIP is  3.62638038229036
+
+``` r
+LIP.calc(ppra.2014$R5.DX[97:120])
+```
+
+    ## LIP is  1.51897236562385
+
+``` r
+LIP.calc(ppra.2015$R5.DX[1:96])
+```
+
+    ## LIP is  1.99920985471441
+
+``` r
+LIP.calc(ppra.2014$R6.DX[97:120])
+```
+
+    ## LIP is  1.2134264917173
+
+``` r
+LIP.calc(ppra.2015$R6.DX[1:96])
+```
+
+    ## LIP is  1.5648468027577
+
+``` r
+LIP.calc(ppra.2014$Yield[97:120])
+```
+
+    ## LIP is  1.02472603430343
+
+``` r
+LIP.calc(ppra.2015$Yield[97:144])
+```
+
+    ## LIP is  1.01825903319186
+
+``` r
 LIP.calc(ppra.2014$Pre.DNA[1:96])
+```
+
+    ## LIP is  1.10329116630433
+
+``` r
 LIP.calc(ppra.2015$Pre.DNA[1:96])
 ```
 
+    ## LIP is  0.99519056761082
 
+Correlation analyses
+--------------------
 
-##Correlation analyses
-There are a few categorical variables in the master data file that I don't need for this analysis.
-Drop these.
-Since I have 96 data points for most variables, I want to correlate the 96 points to 96 points
-But, since Yield is on a different scale from everything, I'll need to do some data averaging prior to correlations with yield
-```{r Pearson correlations 2015}
+There are a few categorical variables in the master data file that I don't need for this analysis. Drop these. Since I have 96 data points for most variables, I want to correlate the 96 points to 96 points But, since Yield is on a different scale from everything, I'll need to do some data averaging prior to correlations with yield
+
+``` r
 library(corrplot)
+```
+
+    ## corrplot 0.84 loaded
+
+``` r
 ppra.df <- ppra.2015[,-(1:6)]
 #Yield is on a different scale from everything, so drop it from the ppra.2015 data frame for now
 ppra.df <- ppra.df[,-53]
@@ -500,10 +875,11 @@ corrplot(all,
          addCoef.col = "black")
 ```
 
-Now, repeat for 2014
-Again, I need to do some averaging to get to the same level as yield (and R5 DX)
-Get all variables with 96 data points to an average with 24 data points
-```{r Pearson correlations 2014}
+![](Heatmaps_and_correlations_files/figure-markdown_github/Pearson%20correlations%202015-1.png)
+
+Now, repeat for 2014 Again, I need to do some averaging to get to the same level as yield (and R5 DX) Get all variables with 96 data points to an average with 24 data points
+
+``` r
 # First, average A1 and A2, A3 and A4, etc.
 row.list <- 0
 row.2014 <- 0
@@ -628,10 +1004,47 @@ colnames(ordered.2014) <- c("Pre.Fv.qPCR",
 #Perform the pairwise pearson correlations
 ordered.correlation <- cor(ordered.2014, use = "pairwise.complete.obs",
                        method = "pearson")
+```
 
+    ## Warning in cor(ordered.2014, use = "pairwise.complete.obs", method =
+    ## "pearson"): the standard deviation is zero
+
+``` r
 #Determine the significance of the correlations
 ordered.p <- p.matrix(ordered.2014)
+```
 
+    ## Warning in cor(x, y): the standard deviation is zero
+
+    ## Warning in cor(x, y): the standard deviation is zero
+
+    ## Warning in cor(x, y): the standard deviation is zero
+
+    ## Warning in cor(x, y): the standard deviation is zero
+
+    ## Warning in cor(x, y): the standard deviation is zero
+
+    ## Warning in cor(x, y): the standard deviation is zero
+
+    ## Warning in cor(x, y): the standard deviation is zero
+
+    ## Warning in cor(x, y): the standard deviation is zero
+
+    ## Warning in cor(x, y): the standard deviation is zero
+
+    ## Warning in cor(x, y): the standard deviation is zero
+
+    ## Warning in cor(x, y): the standard deviation is zero
+
+    ## Warning in cor(x, y): the standard deviation is zero
+
+    ## Warning in cor(x, y): the standard deviation is zero
+
+    ## Warning in cor(x, y): the standard deviation is zero
+
+    ## Warning in cor(x, y): the standard deviation is zero
+
+``` r
 #Plot the corrplot
 par(mfrow=c(1,1))
 corrplot(ordered.correlation, 
@@ -648,5 +1061,10 @@ corrplot(ordered.correlation,
          tl.col="black", tl.pos="lt", tl.cex = 0.8, cl.cex = 1,
          cl.pos = "n",
          addCoef.col = "black")
+```
+
+![](Heatmaps_and_correlations_files/figure-markdown_github/Pearson%20correlations%202014-1.png)
+
+``` r
 #Note: to get the image used in the manuscript, I manually merged the 2014 and 2015 corrplots in powerpoint
 ```
