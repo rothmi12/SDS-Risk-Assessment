@@ -55,7 +55,7 @@ Now, all variables can be read as geodata from geo.list$variable
 
 Next, pick the colors that you want to plot with, and create a custom color palette
 ```{r Color palette}
-color.pal <- c("#006600","#FFFFFF")
+color.pal <- c("#FFFFFF","#006600")
 color.func <- colorRampPalette(color.pal)
 ```
 
@@ -161,30 +161,20 @@ fields.krig <- function(var){
   # Now Krig the data using Krig
   # Defaults to "stationary.cov" as covariance model 
   var.krig <- Krig(xy, z)
+  #Now determine the model quality
+  lm1 <- lm(var$data ~ var.krig$fitted.values)
+  print(summary(lm1))
   # Now plot the Kriged data
   surface(var.krig, 
           type = "C", 
           extrap = T,
           col = color.func(length(var$data)),
-          xlab = "", ylab = "",
+          xlab = "", ylab = ""
           #cex.lab = 1.8,
-          legend.width = 3, legend.lab = "")
+          #legend.width = 3, legend.lab = ""
+          )
 }
-fields.krig.yield <- function(var){
-  xy <- as.data.frame(var$coords)
-  z <- as.data.frame(var$data)
-  # Now Krig the data using Krig
-  # Defaults to "stationary.cov" as covariance model 
-  var.krig <- Krig(xy, z)
-  # Now plot the Kriged data
-  surface(var.krig, 
-          type = "C", 
-          extrap = T,
-          col = color.func(length(var$data)),
-          xlab = "", ylab = "",
-          #cex.lab = 1.5,
-          legend.width = 3, legend.lab = "")
-}
+
 geo.list.2015$Pre.ratio$data <- geo.list.2015$Pre.ratio$data * 1000000
 fields.krig(geo.list.2015$Pre.ratio)
 title("2015 Pre-planting Fv quantities", cex.main = 1.5)
@@ -192,8 +182,8 @@ fields.krig(geo.list.2015$PreSCN.eggs)
 title("2015 Pre-planting SCN eggs", cex.main = 1.5)
 fields.krig(geo.list.2015$R5.DX)
 title("2015 R5 in-field Disease Index", cex.main = 1.5)
-fields.krig.yield(geo.list.2015$Yield)
-title("2015 Soybean Yield", cex.main = 1.5)
+fields.krig(geo.list.2015$Yield)
+title("2015 Soybean Yield (kg/hectare)", cex.main = 1.5)
 ```
 
 Now, repeat with 2014 data
@@ -280,7 +270,7 @@ title("2014 Pre-planting SCN eggs", cex.main = 1.5)
 heatmap.t2(R5.DX.2014)
 title("2014 R5 In-field Disease Index", cex.main = 1.5)
 yield_heatmap.t2(Yield.2014)
-title("Yield (bu/acre)", cex.main = 1.5)
+title("Yield (kg/hectare)", cex.main = 1.5)
 
 geo.list.2014a$Pre.ratio$data <- geo.list.2014a$Pre.ratio$data * 1000000
 fields.krig(geo.list.2014a$Pre.ratio)
@@ -364,9 +354,6 @@ LIP.calc(ppra.2014$R6.DX[97:120])
 LIP.calc(ppra.2015$R6.DX[1:96])
 LIP.calc(ppra.2014$Yield[97:120])
 LIP.calc(ppra.2015$Yield[97:144])
-
-LIP.calc(ppra.2014$Pre.DNA[1:96])
-LIP.calc(ppra.2015$Pre.DNA[1:96])
 ```
 
 
@@ -404,34 +391,35 @@ all.2015 <- cbind.data.frame(yield, avg.2015.mat)
 
 
 #To make a corrplot that correlates the 96 points to 96 points, use "ppra.df" and ignore the yield boxes in the plot!!!
-#To make a corrplot that correlates the 48 points to 48 poitns including yield, use "all.2015" and ignore all boxes except the yield boxes!!!
+#To make a corrplot that correlates the 48 points to 48 points including yield, use "all.2015" and ignore all boxes except the yield boxes!!!
 #Then, export the figures and adjust them as necessary in Powerpoint.
 #Also, comment out the variables that were not duplicated in both years
-ordered.2015 <- cbind(ppra.df$Pre.ratio, 
-                      ppra.df$PreSCN.cysts, 
-                      ppra.df$PreSCN.eggs,
-                      ppra.df$PreSCN.juvs, 
-                      ppra.df$Pre.spiral,
-                      ppra.df$Pre.lesion, 
-                      ppra.df$Pre.dagger,
-                      #ppra.df$V3.qPCR,
-                      #ppra.df$V3.DW, 
-                      #ppra.df$V3.root,
-                      #ppra.df$V3.foliar, 
-                      #ppra.df$R5.qPCR,
-                      #ppra.df$R5.DW,
-                      #ppra.df$R5.root,
-                      #ppra.df$R5.foliar, 
-                      #ppra.df$R4.DX, 
-                      ppra.df$R5.DX,
-                      #ppra.df$R6.DX, 
-                      #ppra.df$Post.ratio,
-                      #ppra.df$PostSCN.cysts,
-                      #ppra.df$PostSCN.eggs, 
-                      #ppra.df$PostSCN.juvs,
-                      #ppra.df$Post.spiral,
-                      #ppra.df$Post.lesion,
-                      all.2015$Yield)
+ordered.2015 <- cbind(all.2015$Pre.ratio, 
+                      all.2015$PreSCN.cysts, 
+                      all.2015$PreSCN.eggs,
+                      all.2015$PreSCN.juvs, 
+                      all.2015$Pre.spiral,
+                      all.2015$Pre.lesion, 
+                      all.2015$Pre.dagger,
+                      all.2015$V3.qPCR,
+                      all.2015$V3.DW, 
+                      all.2015$V3.root,
+                      all.2015$V3.foliar, 
+                      all.2015$R5.qPCR,
+                      all.2015$R5.DW,
+                      all.2015$R5.root,
+                      all.2015$R5.foliar, 
+                      #all.2015$R4.DX, 
+                      all.2015$R5.DX,
+                      #all.2015$R6.DX, 
+                      #all.2015$Post.ratio,
+                      #all.2015$PostSCN.cysts,
+                      #all.2015$PostSCN.eggs, 
+                      #all.2015$PostSCN.juvs,
+                      #all.2015$Post.spiral,
+                      #all.2015$Post.lesion,
+                      all.2015$Yield
+                      )
 
 colnames(ordered.2015) <- c("Pre.Fv.qPCR", 
                             "Pre.SCN.cysts", 
@@ -440,14 +428,14 @@ colnames(ordered.2015) <- c("Pre.Fv.qPCR",
                             "Pre.spiral", 
                             "Pre.lesion", 
                             "Pre.dagger",
-                            #"V3.Fv.qPCR",
-                            #"V3.root.DW", 
-                            #"V3.root.rot",
-                            #"V3.foliar.SDS", 
-                            #"R5.Fv.qPCR",
-                            #"R5.root.DW",
-                            #"R5.root.rot",
-                            #"R5.foliar.SDS" ,
+                            "V3.Fv.qPCR",
+                            "V3.root.DW", 
+                            "V3.root.rot",
+                            "V3.foliar.SDS", 
+                            "R5.Fv.qPCR",
+                            "R5.root.DW",
+                            "R5.root.rot",
+                            "R5.foliar.SDS" ,
                             #"R4.SDS.DX",
                             "R5.SDS.DX",
                             #"R6.SDS.DX", 
@@ -457,13 +445,14 @@ colnames(ordered.2015) <- c("Pre.Fv.qPCR",
                             #"Post.SCN.juvs", 
                             #"Post.spiral", 
                             #"Post.lesion",
-                            "Yield")
+                            "Yield"
+                            )
 
 #Perform the pairwise pearson correlations
 all <- cor(ordered.2015, 
                   use = "pairwise.complete.obs",
                   method = "pearson")
-
+#write.table(all, file = "2015_R_values_yield.csv", sep = ",")
 #Determine if the correlations are significant
 #This function obtains p-values for my matrix of correlations
 p.matrix <- function(mat) {
@@ -482,13 +471,22 @@ p.matrix <- function(mat) {
 }
 all.p <- p.matrix(ordered.2015)
 
+#Per reviewer request - add a multiple comparisons correction
+correct.p <- p.adjust(all.p, method = "fdr", n = length(all.p))
+class(correct.p)
+corrected.p <- matrix(correct.p, ncol = ncol(all.p), nrow = nrow(all.p))
+colnames(corrected.p) <- colnames(all.p)
+rownames(corrected.p) <- rownames(all.p)
+corrected.p
+#write.table(corrected.p, file = "2015_correlations_yield_fdr_P.csv", sep = ",")
+
 #Plot the corrplot
 par(mfrow=c(1,1))
 corrplot(all, 
          method = "color",
          type = "lower", 
          outline = TRUE,
-         p.mat = all.p, 
+         p.mat = corrected.p, 
          sig.level = 0.05,
          diag = FALSE,
          addCoefasPercent = FALSE,
@@ -576,16 +574,16 @@ ordered.2014 <- cbind(all.2014$Pre.ratio,
                       all.2014$PreSCN.eggs,
                       all.2014$PreSCN.juvs,
                       all.2014$Pre.spiral,
-                      all.2014$Pre.lesion,
-                      all.2014$Pre.dagger,
-                      #all.2014$V3.qPCR,
-                      #all.2014$V3.DW,
-                      #all.2014$V3.root,
-                      #ll.2014$V3.foliar,
-                      #all.2014$R5.qPCR,
-                      #all.2014$R5.DW,
-                      #all.2014$R5.root,
-                      #all.2014$R5.foliar,
+                      #all.2014$Pre.lesion,
+                      #all.2014$Pre.dagger,
+                      all.2014$V3.qPCR,
+                      all.2014$V3.DW,
+                      all.2014$V3.root,
+                      all.2014$V3.foliar,
+                      all.2014$R5.qPCR,
+                      all.2014$R5.DW,
+                      all.2014$R5.root,
+                      all.2014$R5.foliar,
                       #all.2014$R4.DX,
                       all.2014$R5.DX,
                       #all.2014$R6.DX,
@@ -603,16 +601,16 @@ colnames(ordered.2014) <- c("Pre.Fv.qPCR",
                             "Pre.SCN.eggs", 
                             "Pre.SCN.juvs",
                             "Pre.spiral", 
-                            "Pre.lesion",
-                            "Pre.dagger",
-                            #"V3.Fv.qPCR",
-                            #"V3.root.DW", 
-                            #V3.root.rot",
-                            #"V3.foliar.SDS", 
-                            #R5.Fv.qPCR",
-                            #R5.root.DW",
-                            #"R5.root.rot",
-                            #"R5.foliar.SDS",
+                            #"Pre.lesion",
+                            #"Pre.dagger",
+                            "V3.Fv.qPCR",
+                            "V3.root.DW", 
+                            "V3.root.rot",
+                            "V3.foliar.SDS", 
+                            "R5.Fv.qPCR",
+                            "R5.root.DW",
+                            "R5.root.rot",
+                            "R5.foliar.SDS",
                             #"R4.SDS.DX", 
                             "R5.SDS.DX",
                             #"R6.SDS.DX", 
@@ -628,9 +626,18 @@ colnames(ordered.2014) <- c("Pre.Fv.qPCR",
 #Perform the pairwise pearson correlations
 ordered.correlation <- cor(ordered.2014, use = "pairwise.complete.obs",
                        method = "pearson")
-
+#write.table(ordered.correlation, file = "2014_R_values.csv", sep = ",")
 #Determine the significance of the correlations
 ordered.p <- p.matrix(ordered.2014)
+
+#Per reviewer request - add a multiple comparisons correction
+correct.p2 <- p.adjust(ordered.p, method = "fdr", n = length(ordered.p))
+class(correct.p2)
+corrected.p2 <- matrix(correct.p2, ncol = ncol(ordered.p), nrow = nrow(ordered.p))
+colnames(corrected.p2) <- colnames(ordered.p)
+rownames(corrected.p2) <- rownames(ordered.p)
+corrected.p2
+#write.table(corrected.p2, file = "2014_correlations_fdr_P.csv", sep = ",")
 
 #Plot the corrplot
 par(mfrow=c(1,1))

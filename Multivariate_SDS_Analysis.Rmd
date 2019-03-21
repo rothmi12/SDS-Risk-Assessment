@@ -106,7 +106,7 @@ nrow(all.2014)
 
 Next, pick the colors that you want to plot with, and create a custom color palette
 ```{r Color palette}
-color.pal <- c("#006600","#FFFFFF")
+color.pal <- c("#FFFFFF","#006600")
 color.func <- colorRampPalette(color.pal)
 ```
 
@@ -146,11 +146,12 @@ scatter3D(df.3d$Fv, df.3d$SCN, df.3d$R5DX,
           col="black",
           lwd = 1.5,
           bg=color.func(length(df.3d$R5DX)),
-          theta = 45, phi = 20,
+          theta = 45, phi = 15,
           main = "Fv-SCN-SDS Relationship",
           xlab = 'Fv ratio', 
           ylab = 'SCN juvs', 
           zlab = 'R5 SDS',
+          colkey = T,
           surf = list(x = x.pred, y = y.pred, z = z.pred,  
                       facets = NA, fit = fitpoints,
                       border = "black",

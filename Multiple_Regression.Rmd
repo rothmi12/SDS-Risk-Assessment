@@ -27,7 +27,7 @@ df.SDS.DX$Year <- as.factor(df.SDS.DX$Year)
 ```{r Multiple Regression for Yield}
 #Determine n, number of observations
 n <- length(df.yield[,1])
-
+n/log(n)
 #Generate the full linear model containing the whole data set
 full.fit <- lm(Yield ~ Year+
                       Pre.ratio+
@@ -61,6 +61,9 @@ full.fit <- lm(Yield ~ Year+
                       #R1.LEF+
                       #R1.qL,
                       data = df.yield)
+plot(full.fit)
+summary(full.fit)
+
 #Determine best version of each model using stepwise AIC and BIC
 best.AIC.full <- stepAIC(full.fit, direction = "both")
 best.BIC.full <- stepAIC(full.fit, direction = "both", k=log(n))
@@ -69,6 +72,19 @@ summary(best.AIC.full)
 summary(best.BIC.full)
 best.BIC.full$anova
 best.BIC.full$call
+
+#Per reviewer request, check for multicollinearity
+#First, calculate VIF, Variance Inflation Factor (indication of collinearity)
+library(car)
+collinearity.check <- vif(best.BIC.full)
+collinearity.check[1]
+collinearity.check[2]
+#Both are less than 1.5 (threshold for concern is 5) 
+#Not concerned about large collinearity
+#Another way to interpret vif is by taking the square root of each
+sqrt(collinearity.check[1]) #1.19
+sqrt(collinearity.check[2]) #1.19
+#The standard error of each factor is 1.19 x larger than if there were no relationshiop between the two. This is not significant, so again, not concerned much about collinearity.
 
 #Best model is lm(formula = Yield ~ R5.DW + R5.DX, data = df.yield)
 #Check to see if adding the interaction term R5.DW:R5.DX helps
@@ -82,7 +98,7 @@ summary(best.BIC)
 df.SDS.DX$Pre.ratio <- df.SDS.DX$Pre.ratio * 1000000
 #Determine n, number of observations
 n <- length(df.SDS.DX[,1])
-
+n/log(n)
 #Remove non-predictive variables (Anything R5)
 R5.DX.fit <- lm(R5.DX ~ Year +
                          V3.DW+
@@ -100,6 +116,9 @@ R5.DX.fit <- lm(R5.DX ~ Year +
                          V3.qPCR,
                          #R5.qPCR
                          data = df.SDS.DX)
+
+plot(R5.DX.fit)
+summary(R5.DX.fit)
 #Determine the best version of each model using stepwise AIC and BIC
 best.AIC.DX <- stepAIC(R5.DX.fit, direction = "both")
 best.BIC.DX <- stepAIC(R5.DX.fit, direction = "both", k=log(n))
@@ -108,6 +127,22 @@ best.BIC.DX$anova
 summary(R5.DX.fit)
 summary(best.AIC.DX)
 summary(best.BIC.DX)
+
+#Per reviewer request, check for multicollinearity
+#First, calculate VIF, Variance Inflation Factor (indication of collinearity)
+library(car)
+collinearity.check <- vif(best.BIC.DX)
+collinearity.check[1]
+collinearity.check[2]
+collinearity.check[3]
+#Both are less than 2.5 (threshold for concern is 5) 
+#Not concerned about large collinearity
+
+#Another way to interpret vif is by taking the square root of each
+sqrt(collinearity.check[1]) #1.57
+sqrt(collinearity.check[2]) #1.51
+sqrt(collinearity.check[3]) #1.12
+#The standard error of problemmatic factors are ~1.5x larger than if there were no relationshiop between the two. To me, this isn't that bad...not concerned much about collinearity.
 
 #So, the best model (according to BIC) to predict R5.DX is:
 # R5.DX = Year + Pre.ratio + Pre.SCN.eggs
@@ -131,11 +166,11 @@ R5.DW.fit <- lm(R5.DW ~ Year +
                          PreSCN.eggs+
                          PreSCN.juvs+ 
                          Pre.spiral+
-                         Pre.ratio+
                          V3.qPCR,
                          #R5.qPCR,
                          data = df.SDS.DX)
-
+plot(R5.DW.fit)
+summary(R5.DW.fit)
 #Determine the best version of each model using stepwise AIC and BIC
 best.AIC.DW <- stepAIC(R5.DW.fit, direction = "both")
 best.BIC.DW <- stepAIC(R5.DW.fit, direction = "both", k=log(n))
@@ -144,6 +179,20 @@ best.BIC.DW$anova
 summary(R5.DW.fit)
 summary(best.AIC.DW)
 summary(best.BIC.DW)
+
+#Per reviewer request, check for multicollinearity
+#First, calculate VIF, Variance Inflation Factor (indication of collinearity)
+library(car)
+collinearity.check <- vif(best.BIC.DW)
+collinearity.check[1]
+collinearity.check[2]
+#Both are less than 1.5 (threshold for concern is 5) 
+#Not concerned about large collinearity
+
+#Another way to interpret vif is by taking the square root of each
+sqrt(collinearity.check[1]) #1.15
+sqrt(collinearity.check[2]) #1.15
+#The standard error of both factors are ~1.15x larger than if there were no relationshiop between the two. To me, this isn't that bad...not concerned about collinearity
 
 #So, the best model (according to BIC) to predict R5.DW is:
 # R5.DW = V3.root + Pre.SCN.cysts
